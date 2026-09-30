@@ -1,4 +1,4 @@
-# dsh-database bundle patch: inserts this plugin into a profile's layer stack.
+﻿# dsh-database bundle patch: inserts this plugin into a profile's layer stack.
 - insert:
-    - id: dsh-database
-      name: 'dsh-database'
+    - id: dsh-database-explorer
+      name: 'dsh-database-explorer'
