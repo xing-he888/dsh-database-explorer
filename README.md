@@ -35,6 +35,10 @@ dsh plugin --profile web add dsh-database-explorer
 - For MySQL set `local_infile=false` clients aside — this plugin only issues ordinary queries（普通查询即可，无需特殊服务端配置）
 - Restart DSH Desktop after installing / 安装后重启 DSH Desktop
 
+## Source / 源码
+
+https://github.com/xing-he888/dsh-database-explorer
+
 ## License
 
 MIT

@@ -1,7 +1,7 @@
-﻿{
+{
   "name": "dsh-database-explorer",
   "version": "0.1.0",
-  "description": "Database explorer for DeepSeek Harness: connect SQLite / MySQL / PostgreSQL / SQL Server / MongoDB / ClickHouse, browse schemas and run SQL 鈥?a PyCharm-Database-style panel as a third Conversation tab. Cell editing, auto-reconnect and full-table browsing included.",
+  "description": "Database explorer for DeepSeek Harness: connect SQLite / MySQL / PostgreSQL / SQL Server / MongoDB / ClickHouse, browse schemas and run SQL — a PyCharm-Database-style panel as a third Conversation tab. Cell editing, auto-reconnect and full-table browsing included.",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -19,11 +19,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xing-he888/dsh-database.git"
+    "url": "git+https://github.com/xing-he888/dsh-database-explorer.git"
   },
-  "homepage": "https://github.com/xing-he888/dsh-database#readme",
-  "bugs": "https://github.com/xing-he888/dsh-database/issues",
-  "author": "YOUR NAME <your@email.example>",
+  "homepage": "https://github.com/xing-he888/dsh-database-explorer#readme",
+  "bugs": "https://github.com/xing-he888/dsh-database-explorer/issues",
+  "author": "xing-he888",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
