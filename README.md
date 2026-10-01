@@ -12,6 +12,9 @@ Database explorer for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek
 - 🌳 **Schema tree / 结构树**：connection → database/schema → table/view → column, expand on click（连接 → 库 → 表 → 字段，点击逐级展开）
 - 👆 **Click a table to see its rows / 点表名直接看数据** — no LIMIT, host caps at 10,000 rows with a truncation notice（不拼 LIMIT，主机侧上限 10000 行，超出有提示）
 - ✏️ **Inline cell editing / 双击单元格直接改数据**：double-click → edit → Enter saves via a parameterized, PK-addressed `UPDATE`; PK columns are marked 🗝; tables without a PK stay read-only（双击编辑，回车保存；主机侧参数化 UPDATE 按主键精确定位；无主键的表只读）
+- 🖱 **Visual table designer / 可视化建表**：create a table by clicking — name, columns, types, PK/auto-increment/unique/default all picked in a form, optional SQL preview; the host builds engine-specific DDL（表名、字段、类型、主键/自增/唯一/默认值全部点选，可先看 SQL 预览；DDL 由主机端按引擎生成）
+- ⤓ **Export / 导出**：one click to download the open table as CSV (Excel-friendly BOM) / JSON / SQL INSERTs, host-side streaming, up to 100,000 rows（一键下载当前表：CSV 带 BOM 方便 Excel、JSON、或可直接执行的 INSERT 语句；主机侧生成，上限 10 万行）
+- ⤒ **Import / 导入**：pick a CSV (header row) or JSON (object array) file and it batch-inserts with parameterized statements, then reloads the grid（选 CSV 首行列名或 JSON 对象数组，参数化分批插入，完成后自动刷新）
 - 💬 **SQL editor / SQL 编辑器**：Ctrl+Enter to run, MongoDB accepts JSON command documents（MongoDB 用 JSON 命令文档，如 `{"find":"users","filter":{},"limit":20}`）
 - 🔐 **Secrets stay local / 密码本机保存**：passwords are kept in memory by default; tick "remember" to store locally and auto-reconnect after restart（密码默认只在内存；勾选「记住密码」后重启自动重连）
 - 🛡 **Safety rails / 安全设计**：same-origin fence on all mutating routes, driver error listeners so a dropped connection can never crash the host, host-side row caps（所有写路由同源校验；驱动后台错误只记日志不崩主机；主机侧行数上限）
@@ -28,6 +31,7 @@ dsh plugin --profile web add dsh-database-explorer
 2. Click **+** to add a connection; tick **记住密码** to survive restarts（点 + 新建连接，勾选「记住密码」重启免输）
 3. Expand the connection, click a table — data appears on the right（展开连接，点表名，右侧即出数据）
 4. Double-click any cell to edit it（双击单元格可直接修改）
+5. **⤓ CSV / JSON / SQL** above the grid exports the open table; **⤒ 导入数据** loads a CSV/JSON file into it（表格上方 ⤓ 导出当前表，⤒ 导入 CSV/JSON 文件）
 
 ## Notes / 说明
 

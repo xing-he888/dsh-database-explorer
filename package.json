@@ -1,7 +1,7 @@
 {
   "name": "dsh-database-explorer",
-  "version": "0.1.0",
-  "description": "Database explorer for DeepSeek Harness: connect SQLite / MySQL / PostgreSQL / SQL Server / MongoDB / ClickHouse, browse schemas and run SQL — a PyCharm-Database-style panel as a third Conversation tab. Cell editing, auto-reconnect and full-table browsing included.",
+  "version": "0.7.1",
+  "description": "Database explorer for DeepSeek Harness: connect SQLite / MySQL / PostgreSQL / SQL Server / MongoDB / ClickHouse, browse schemas and run SQL — a PyCharm-Database-style panel as a third Conversation tab. Visual table designer (create tables by clicking), CSV/JSON/SQL export, CSV/JSON import, cell editing, auto-reconnect and full-table browsing included.",
   "keywords": [
     "dsh",
     "dsh-plugin",
