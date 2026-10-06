@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # 套件零依赖（node:sqlite / net / http / fetch 均为内建），无需 install
+      - name: 回归套件（v099/v100/v101）
+        run: node test/run-all.mjs
+      - name: 语法检查
+        run: node --check lib/index.js && node --check lib/connections.js && node --check lib/nosql.js && node --check lib/client.js

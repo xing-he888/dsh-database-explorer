@@ -1,5 +1,5 @@
 /**
- * dsh-database-explorer — 第 4 轮修复回归套件（v0.9.13）
+ * dsh-database-explorer — 第 4 轮修复回归套件（随 v0.9.13 引入）
  *
  * 覆盖本轮三个修复：
  *   S1  envPassword 内网限制：resolvePassword 层中央强制 + 精确地址匹配
@@ -275,9 +275,9 @@ console.log('\n[冒烟] 版本握手 + SQLite 主路径');
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   const clientSrc = fs.readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8');
   const cv = clientSrc.match(/const CLIENT_VERSION = "([^"]+)"/)?.[1];
-  check('版本握手：package.json === CLIENT_VERSION === 0.9.13', () => {
+  check('版本握手：package.json === CLIENT_VERSION 且为合法三段版本号（与具体版本解耦，升版无需改测试）', () => {
     assert.equal(pkg.version, cv);
-    assert.equal(pkg.version, '0.9.13');
+    assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
   });
 }
 await checkAsync('SQLite：参数化 updateCell / 删除 / 多语句不受影响', async () => {

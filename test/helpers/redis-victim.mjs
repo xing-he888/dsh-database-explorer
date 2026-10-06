@@ -1,21 +1,28 @@
 /**
- * redis-victim — test-v101 的子进程受害者脚本。
+ * redis-victim — test-v101 的子进程探针。
  *
  * 用法：node redis-victim.mjs connect <port>
  * 以 openNoSqlHandle 建立一条真实 Redis handle（不做任何 mock）。
- * 若宿主解析器在 socket 回调里裸抛（S1）或递归栈溢出（S2），
- * 本进程将带着 uncaught exception 退出——由父进程检查退出码与 stderr。
+ * 修复后无论连接成功还是被友好拒绝，本进程都 exit 0：
+ *   CONNECTED_OK  — 握手成功（S5 修复后，对真实 +PONG 服务）
+ *   REJECTED_OK   — 被友好拒绝（S1/S2 修复后，异常服务器不再杀死进程）
+ * 修复前的缺陷行为是 uncaughtException 直接退出（exit 1）——由父进程检查。
  */
-const { openNoSqlHandle } = await import('../../lib/nosql.js').then((m) => m.default ?? m).catch(async () => {
-  // 兼容被直接以相对路径运行
-  return await import(new URL('../../lib/nosql.js', import.meta.url));
-});
+import { openNoSqlHandle } from '../../lib/nosql.js';
 
 const [, , mode, portArg] = process.argv;
 if (mode !== 'connect') {
   console.error('usage: node redis-victim.mjs connect <port>');
   process.exit(2);
 }
-const handle = await openNoSqlHandle({ kind: 'redis', host: '127.0.0.1', port: Number(portArg) }, '');
-console.log('CONNECTED_OK', handle.kind);
-process.exit(0);
+try {
+  const handle = await openNoSqlHandle(
+    { kind: 'redis', host: '127.0.0.1', port: Number(portArg), ssl: process.env.VICTIM_SSL === '1' },
+    process.env.VICTIM_PASSWORD ?? ''
+  );
+  console.log('CONNECTED_OK', handle.kind);
+  process.exit(0);
+} catch (error) {
+  console.log('REJECTED_OK', String(error?.message || error).slice(0, 120));
+  process.exit(0);
+}
