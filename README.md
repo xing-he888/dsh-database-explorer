@@ -271,3 +271,13 @@ MIT
 - **无外键约束的库也能画全关系图**：按命名约定推断关系（列 `user_id` → 表 `users` 主键，支持 `user_id/_no/_key/_code/_uuid` 后缀与 users/categories 单复数归一），画布上以虚线展示、工具栏可一键开关——参考 SchemaSpy 的 implied relationships 做法；保守规则保精确率：两表同名歧义不猜、复合主键不参与、显式外键列不重复推断
 - **连接池大小可配置**：连接表单新增「连接池大小（1–64，留空 = 默认）」，作用于 mysql `connectionLimit`、pg `max`、mssql `pool.max`、mongo `maxPoolSize`；非法值自动回落引擎默认
 - 回归套件增至 5 个（v099–v103，73 断言）
+
+---
+
+## v0.9.17：聊天里直接用——agent 原生工具
+
+- **数据库能力进入聊天**：插件向 DSH agent 注册 9 个原生工具（`ctx.tools.register`），在聊天里说"帮我看 users 表前 10 行"→ 模型调用 `db_peek_page` → 会话内展示调用流程与结果摘要
+- **读写分级**：只读工具（连接列表/连接/结构/分页/E-R）始终注册；写入工具（SQL 执行/单元格更新/插行/删行）默认关闭——在 `plugin-data/dsh-database-explorer/` 创建 `agent-write-tools` 空文件即显式授权（官方原则：授权确认类动作保持 user-only）
+- **凭据隔离**：工具不含任何密码参数，连接一律使用面板已记住的凭据（`savedPassword` 永不进入模型上下文）
+- **上下文保护**：工具结果 20000 字符截断、分页 100 行上限、超长树折叠为 preview；会话渲染只报计数不铺数据
+- defineTool 解析两级兜底（裸说明符 → 宿主 app.asar require(esm)）；解析失败仅告警，面板不受影响
