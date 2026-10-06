@@ -263,3 +263,11 @@ MIT
 - **视图不再混入 E-R 图**：pg/mysql/mssql 的内省过滤 TABLE_TYPE = BASE TABLE，与 sqlite 行为对齐
 - **pg 改用连接池**（max 4）：此前是单连接 Client，面板并行请求（分页 count + 取页）在一条连接上串行排队；语句超时、失败回收等 v0.9.14 行为保持
 - 回归套件增至 4 个（v099–v102，67 断言）：新增 E-R 正确率套件（真 sqlite 推导 1:1/N:1、600 边截断上报、三引擎视图过滤 SQL、复合外键列序回归）
+
+---
+
+## v0.9.16：SchemaSpy 式推断关系 + 连接池可调
+
+- **无外键约束的库也能画全关系图**：按命名约定推断关系（列 `user_id` → 表 `users` 主键，支持 `user_id/_no/_key/_code/_uuid` 后缀与 users/categories 单复数归一），画布上以虚线展示、工具栏可一键开关——参考 SchemaSpy 的 implied relationships 做法；保守规则保精确率：两表同名歧义不猜、复合主键不参与、显式外键列不重复推断
+- **连接池大小可配置**：连接表单新增「连接池大小（1–64，留空 = 默认）」，作用于 mysql `connectionLimit`、pg `max`、mssql `pool.max`、mongo `maxPoolSize`；非法值自动回落引擎默认
+- 回归套件增至 5 个（v099–v103，73 断言）

@@ -97,12 +97,13 @@ run(process.execPath, ['test/run-all.mjs']);
 if (flags.has('--tag')) {
   step = 5;
   console.log('\n[5] git 提交 + tag');
-  const status = spawnSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' });
-  if (status.stdout.trim() !== '') {
-    run('git', ['add', '-A', ':!AUDIT.md']); // AUDIT.md 保持不入库（含未闭环登记册）
+  run('git', ['add', '-A', ':!AUDIT.md']); // AUDIT.md 保持不入库（含未闭环登记册）
+  // 有暂存差异才提交——工作区只剩被排除的 AUDIT.md 时 git commit 会空提交报错
+  const staged = spawnSync('git', ['diff', '--cached', '--quiet'], { cwd: repo });
+  if (staged.status !== 0) {
     run('git', ['commit', '-m', `v${pkg.version}`]);
   } else {
-    console.log('    工作区干净，跳过提交');
+    console.log('    无暂存差异，跳过提交');
   }
   run('git', ['tag', '-f', `v${pkg.version}`]);
 }
