@@ -33,6 +33,25 @@ dsh plugin --profile web add dsh-database-explorer
 4. Double-click any cell to edit it（双击单元格可直接修改）
 5. **⤓ CSV / JSON / SQL** above the grid exports the open table; **⤒ 导入数据** loads a CSV/JSON file into it（表格上方 ⤓ 导出当前表，⤒ 导入 CSV/JSON 文件）
 
+### 在聊天中直接使用（v0.9.17，agent 工具）
+
+重启 DSH Desktop 后，除数据库面板外，本插件的 9 个工具会自动注册给 DSH 的 AI 助手——在聊天里直接说：
+
+- "列出我的数据库连接" → 调用 `db_list_connections`
+- "users 表前 10 行" → 调用 `db_connect` + `db_peek_page`
+- "users 和 orders 是什么关系？" → 调用 `db_er_graph`
+- "这个库有哪些表和字段？" → 调用 `db_schema`
+
+调用过程（工具名、参数、结果摘要）会在会话中实时展示。安全约定：
+
+| 约定 | 说明 |
+|---|---|
+| 只读默认 | 列表 / 连接 / 结构 / 分页 / E-R 五个只读工具默认可用 |
+| 写入需授权 | SQL 执行 / 改单元格 / 插行 / 删行默认**关闭**；在 `~/.dsh/plugin-data/dsh-database-explorer/` 下创建空文件 `agent-write-tools`（重启后生效）即显式授权，删除该文件即收回 |
+| 密码不出面板 | 工具没有密码参数，连接一律使用面板记住的凭据，密码永不进入对话 |
+| 结果限量 | 单次结果 20000 字符、分页 100 行封顶，防止撑爆对话上下文 |
+
+
 ## Notes / 说明
 
 - Optional drivers (mysql2 / pg / mssql / mongodb / @clickhouse/client) are `optionalDependencies`: install only what you use, SQLite works out of the box（可选驱动按需安装，SQLite 开箱即用）
