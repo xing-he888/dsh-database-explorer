@@ -253,3 +253,13 @@ MIT
 - `npm run release`：发布流水线脚本——版本握手校验 → pack 清单检查 → 三副本同步/比对 → 全量回归 → git tag → npm publish，逐步可选
 - GitHub Actions CI：push/PR 自动跑全部回归套件
 - 新增 `sslVerify` 连接字段与 UI 勾选；i18n 硬编码字符串收敛进词典
+
+---
+
+## v0.9.15：E-R 图正确率提升 + pg 连接池
+
+- **基数自动推导**：外键所在列是单列主键/唯一索引（mysql statistics / pg conkey / mssql 约束 / sqlite index_list）时联系自动标 1:1，其余 N:1——此前一律假设 N:1；画板上仍可手工修改
+- **外键边截断可见**：全库外键超过 400 条时画布顶部黄条提示总数（此前静默丢弃，"怎么少了几条线"无从判断）
+- **视图不再混入 E-R 图**：pg/mysql/mssql 的内省过滤 TABLE_TYPE = BASE TABLE，与 sqlite 行为对齐
+- **pg 改用连接池**（max 4）：此前是单连接 Client，面板并行请求（分页 count + 取页）在一条连接上串行排队；语句超时、失败回收等 v0.9.14 行为保持
+- 回归套件增至 4 个（v099–v102，67 断言）：新增 E-R 正确率套件（真 sqlite 推导 1:1/N:1、600 边截断上报、三引擎视图过滤 SQL、复合外键列序回归）
