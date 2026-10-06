@@ -20,6 +20,9 @@ import { fileURLToPath } from 'node:url';
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
 const flags = new Set(process.argv.slice(2));
 let step = 0;
+// Windows 上 npm 是 npm.cmd：spawnSync 直接直调 .cmd，shell:true 会产生
+// 退出码 null 的假失败（实测 step 6 误报）
+const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const fail = (msg) => { console.error(`\n[x] 第 ${step} 步失败：${msg}`); process.exit(1); };
 const run = (cmd, args, opts = {}) => {
   const r = spawnSync(cmd, args, { stdio: 'inherit', cwd: repo, ...opts });
@@ -45,8 +48,8 @@ console.log('    OK');
 step = 2;
 console.log('\n[2] npm pack --dry-run 清单检查');
 {
-  // Windows 上 npm 是 npm.cmd，spawnSync 必须带 shell 才能找到
-  const r = spawnSync('npm', ['pack', '--dry-run'], { cwd: repo, encoding: 'utf8', shell: process.platform === 'win32' });
+  // Windows 上 npm 是 npm.cmd，spawnSync 必须直调 npm.cmd（shell:true 会假失败）
+  const r = spawnSync(npmCmd, ['pack', '--dry-run'], { cwd: repo, encoding: 'utf8' });
   if (r.status !== 0) fail('npm pack --dry-run 失败');
   const out = r.stdout + r.stderr;
   if (/AUDIT\.md|test\//.test(out)) fail('pack 清单里出现了内部文件（AUDIT.md / test/）——检查 package.json files');
@@ -104,7 +107,7 @@ if (flags.has('--tag')) {
 if (flags.has('--publish')) {
   step = 6;
   console.log('\n[6] npm publish');
-  run('npm', ['publish']);
+  run(npmCmd, ['publish']);
 }
 
 console.log(`\n[完成] v${pkg.version}${flags.has('--publish') ? ' 已发布' : '（校验/同步模式——加 --tag 打标、--publish 发布）'}`);
