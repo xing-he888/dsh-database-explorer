@@ -2,3 +2,5 @@ node_modules/
 *.tgz
 *.log
 .DS_Store
+# lib/package.json 的改名保留件（它遮蔽宿主包定位的教训见 release.mjs 第 2 步）
+package.json.bak-mcp

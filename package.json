@@ -1,6 +1,6 @@
 {
   "name": "dsh-database-explorer",
-  "version": "0.9.17",
+  "version": "0.9.19",
   "description": "Database explorer for DeepSeek Harness: connect SQLite / MySQL / PostgreSQL / SQL Server / MongoDB / ClickHouse / Redis / Elasticsearch / Qdrant (vector DB) — zero-dependency NoSQL & vector engines, browse schemas and run SQL — a PyCharm-Database-style panel as a third Conversation tab. Visual table designer (create tables by clicking), CSV/JSON/SQL export, CSV/JSON import, cell editing, auto-reconnect and full-table browsing included.",
   "keywords": [
     "dsh",

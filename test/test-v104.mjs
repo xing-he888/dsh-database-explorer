@@ -87,7 +87,8 @@ console.log('\n[分级] 只读默认 / 写入门控');
     for (const n of ['db_query', 'db_update_cell', 'db_insert_row', 'db_delete_row']) {
       assert.ok(names.includes(n), `缺少 ${n}`);
     }
-    assert.equal(names.length, 9);
+    // v0.9.19：只读层新增 db_describe_table → 6 + 4 = 10
+    assert.equal(names.length, 10);
   });
 }
 

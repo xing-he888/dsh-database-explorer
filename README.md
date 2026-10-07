@@ -48,8 +48,52 @@ dsh plugin --profile web add dsh-database-explorer
 |---|---|
 | 只读默认 | 列表 / 连接 / 结构 / 分页 / E-R 五个只读工具默认可用 |
 | 写入需授权 | SQL 执行 / 改单元格 / 插行 / 删行默认**关闭**；在 `~/.dsh/plugin-data/dsh-database-explorer/` 下创建空文件 `agent-write-tools`（重启后生效）即显式授权，删除该文件即收回 |
+| 连接级只读 | 档案勾选「🔒 只读」后，agent 写工具在该连接上同样被拒（见下节）——写权限由连接身份决定，不只由授权文件决定 |
 | 密码不出面板 | 工具没有密码参数，连接一律使用面板记住的凭据，密码永不进入对话 |
 | 结果限量 | 单次结果 20000 字符、分页 100 行封顶，防止撑爆对话上下文 |
+
+### 连接级只读（v0.9.18）
+
+连接编辑里新增「🔒 只读连接」勾选。勾选后该连接的一切写路径被拒绝——面板（改格/删行/插行/导入/建表/设计器）与 agent 写工具（db_query / db_update_cell / db_insert_row / db_delete_row）走同一套规则，写权限由**连接身份**决定：
+
+- **结构化写路径**：host 侧 `assertWritable` 硬拒绝，绝不触达驱动
+- **SQL / 原生命令通道**：统一收口 `runQuery` 按语句预检——仅放行单条读语句（SELECT / SHOW / EXPLAIN / DESC / PRAGMA 等）；`WITH` 开头（pg/mssql 的 CTE 可携带写）、`SELECT … INTO`（服务端建表/写文件）、`set_config(`（可撤防 pg 引擎级只读）一律拒绝；redis 按读命令白名单（GET/SCAN/HGETALL/…，SET/DEL/CONFIG 等全拒）、mongo 仅 find/count/aggregate（管道含 `$out/$merge` 拒绝）、es·qdrant 仅放行 GET 与 `_search/_count/_scroll` 等读端点（拒绝 `../` 路径穿越）。值文本里恰含「into」字样的读查询会被保守误拦，属设计取舍
+- **引擎级兜底**：SQLite 以只读模式打开文件（写被驱动本体拒绝）；pg 连接串注入 `default_transaction_read_only=on`；ClickHouse `readonly=1`——三者覆盖常规 DML/DDL，服务器端函数类写原语由客户端预检额外拦截。MySQL/MariaDB 与 SQL Server 无可靠的会话级只读开关，以客户端预检为主防线（错误信息如实说明）
+- **导入预览**：`dryRun` 预览只回列映射不写库（v0.9.18 修复：此前路由丢弃 dryRun，预览实际在执行真实导入）
+
+推荐用法：生产库建两个档案——「生产库 🔒 只读」日常浏览随便点，「生产库（可写）」真正要改数据时才连。
+
+**v0.9.18 同批修复**：`db_update_cell` 的 value 参数收紧为必填（`oneOf[string, null]`）——此前 agent 省略 value 时，pg/mssql 驱动会把 undefined 绑定成 NULL **静默清空单元格并报成功**（第 8 轮审计 P0）；修复 >120 字符/JSON 单元格「双击直接修改」被单击查看器挡死的问题（单击延迟开查看器、双击取消进入编辑态）；修复导入预览 `dryRun` 被路由丢弃导致预览实际执行真实导入的存量缺陷（自 0.9.0 起）。回归套件 `test-v105.mjs` 新增 74 断言覆盖以上全部行为。
+
+### 写操作审计（v0.9.19）
+
+一切写路径现在都有账：改格 / 删行 / 插行 / 导入 / 建表 / 改表 / 写 SQL（含只读连接上**被拒绝的尝试**）逐条记入 `plugin-data/dsh-database-explorer/audit-log.jsonl`（追加式 JSONL，超 5MB 轮转为 `.1`，只留一代）。面板树头部新增 **📜** 按钮可查看最近 200 条（时间 / 来源 panel·agent·mcp / 操作 / 连接 / 表 / 结果）。回答"谁在什么时候对哪个库改了什么"。SELECT 类浏览不入账，避免翻页刷屏。
+
+### 密码加密存储（v0.9.19，Windows）
+
+「记住密码」落盘时自动经 **DPAPI（CurrentUser）** 加密为 `dpapi:v1:<密文>`，`connections.json` 里不再有明文。存量明文在下次自动重连成功后惰性加密迁移。防护边界如实说明：**防文件外流**（拷贝 / 备份泄漏），不防同用户本地进程（DPAPI CurrentUser 语义如此，与浏览器 cookie 同级）。非 Windows 平台行为不变；powershell 不可用时保存自动回退明文并告警。
+
+### 连接档案导入 / 导出（v0.9.19）
+
+树头部 **⬆ / ⬇**：导出为脱敏 JSON（**不含任何形式的密码**，含 DPAPI 密文与环境变量名；`readOnly` 等设置保留），导入一律新建 id、忽略来件中的密码字段、单次上限 100 个。换机器 / 备份配置不再手抄。
+
+### MCP 出口：把你的连接库接入任意 AI 客户端（v0.9.19）
+
+零依赖 MCP stdio 服务器（`lib/mcp.js`，MCP 协议子集：initialize / tools/list / tools/call）。在任意支持 MCP 的客户端（Claude Desktop、Cursor 等）注册：
+
+```json
+{ "command": "node", "args": ["<插件目录>/lib/mcp.js"], "env": { "DSH_HOME": "可选，默认 ~/.dsh" } }
+```
+
+与面板共享同一份连接档案与同一套安全规则：6 个只读工具（含 `db_describe_table`）常驻；4 个写工具仍由 `agent-write-tools` 标记文件门控；只读连接的语句预检同样生效；结果 20000 字符 / 1000 行封顶。
+
+### 面板之外的性能与修复（v0.9.19）
+
+- **导出内存封顶**：CSV/JSON/SQL 导出在 SQL 层限行（`LIMIT/TOP 100001`）——此前裸 `SELECT *` 全量物化，数百万行的表导出会拖入 GB 级内存；超过 10 万行如实标记截断，客户端读 `x-export-truncated` 头明示
+- **MySQL 内省批量化**：结构树从「每库每表一条查询」的 N+1 改为两条 `information_schema` 全量查询 + 本地聚合——300 表的库从 300+ 条往返降到 3 条
+- **agent 工具新增 `db_describe_table`**：单表列结构（类型/主键/默认值），大库工作流 = `db_schema depth=tables` → `db_describe_table`，不再把整棵树塞进上下文
+- **`db_query` 新增 `dryRun`**：写语句先解释后执行（mysql/pg/sqlite EXPLAIN、mssql `SET NOEXEC`、clickhouse 仅 SELECT），dryRun 与执行分开记账
+- 新增回归套件 `test-v106.mjs`（32 断言），全量 `npm test` 8/8 套件通过
 
 
 ## Notes / 说明

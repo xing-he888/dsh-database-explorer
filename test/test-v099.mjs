@@ -108,7 +108,10 @@ check('内网目标 + envPassword → 正常解析环境变量', () => {
 check('显式密码 / 已存密码不受影响', () => {
   // createProfile 返回脱敏投影（不含 savedPassword）——断言用存储档原始对象
   const p3 = mgr.getProfile(mgr.createProfile({ kind: 'mysql', name: 'z', host: '8.8.8.8', password: 'typed', rememberPassword: true }).id);
-  assert.equal(p3.savedPassword, 'typed');
+  // R-DPAPI（v0.9.19）：Windows 上落盘为 dpapi:v1: 前缀密文，其余平台明文；
+  // resolvePassword 一律还原为原值
+  assert.ok(p3.savedPassword === 'typed' || p3.savedPassword.startsWith('dpapi:v1:'),
+    `落盘形态应为明文（非 Windows）或 DPAPI 密文，实际: ${String(p3.savedPassword).slice(0, 20)}…`);
   assert.equal(mgr.resolvePassword(p3, 'typed'), 'typed');
   assert.equal(mgr.resolvePassword(p3), 'typed');
 });

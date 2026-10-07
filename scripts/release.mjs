@@ -57,6 +57,7 @@ console.log('\n[2] npm pack --dry-run 清单检查');
   if (r.status !== 0) fail('npm pack --dry-run 失败');
   const out = r.stdout + r.stderr;
   if (/AUDIT\.md|test\//.test(out)) fail('pack 清单里出现了内部文件（AUDIT.md / test/）——检查 package.json files');
+  if (/lib[\/\\]package\.json/.test(out)) fail('pack 清单里出现了 lib/package.json —— 它会遮蔽宿主的包定位（nearestPackage 命中 lib/ 一层），把 exports["./client"] 解析成 lib/lib/client.js，浏览器端 bundle 组装失败，“数据库” tab 消失（v0.9.17 的教训）。只保留包根的 package.json。');
   const files = out.match(/total files:\s*(\d+)/)?.[1];
   console.log(`    OK（${files ?? '?'} 个文件）`);
 }
