@@ -499,6 +499,62 @@ console.log('\n[性能] 导出 SQL 封顶 / 内省批量化');
 }
 
 // ---------------------------------------------------------------------------
+// 删表（v0.9.20 面板 🗑）：真 SQLite 全链路 + 确认闸门 + 审计
+// ---------------------------------------------------------------------------
+console.log('\n[删表] dropTable 确认闸门 / 审计 / 只读拒绝');
+{
+  const { DatabaseSync } = require('node:sqlite');
+  await checkAsync('真 SQLite：dropTable 删表，确认名一致时成功并入账', async () => {
+    const home = tempDir('drop-table');
+    const dbFile = join(home, 'drop.db');
+    const setup = new DatabaseSync(dbFile);
+    setup.exec('CREATE TABLE doomed(id INTEGER PRIMARY KEY, v TEXT)');
+    setup.exec('INSERT INTO doomed VALUES (1, \'x\')');
+    setup.close();
+    const mgr = createConnectionManager(home);
+    mgr.createProfile({ kind: 'sqlite', name: 's', database: dbFile });
+    const pid = mgr.profiles[0].id;
+    await mgr.connect(pid);
+    const r = await mgr.dropTable({ id: pid, database: '', table: 'doomed', confirm: 'doomed' });
+    assert.equal(r.ok, true);
+    const after = new DatabaseSync(dbFile);
+    const names = after.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='doomed'").all();
+    after.close();
+    assert.equal(names.length, 0, '表应已删除');
+    assert.ok(mgr.readAudit().some((e) => e.op === 'drop-table' && e.ok === true && e.table === 'doomed'), '删表必须入账');
+  });
+  await checkAsync('确认闸门：confirm 与表名不一致 → 拒绝且不执行', async () => {
+    const home = tempDir('drop-confirm');
+    const dbFile = join(home, 'keep.db');
+    const setup = new DatabaseSync(dbFile);
+    setup.exec('CREATE TABLE survivor(id INTEGER)');
+    setup.close();
+    const mgr = createConnectionManager(home);
+    mgr.createProfile({ kind: 'sqlite', name: 's', database: dbFile });
+    const pid = mgr.profiles[0].id;
+    await mgr.connect(pid);
+    await assert.rejects(() => mgr.dropTable({ id: pid, database: '', table: 'survivor', confirm: 'doomed' }), /确认名|confirmation/);
+    const after = new DatabaseSync(dbFile);
+    const names = after.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='survivor'").all();
+    after.close();
+    assert.equal(names.length, 1, '表必须还在');
+    assert.ok(mgr.readAudit().some((e) => e.op === 'drop-table' && e.ok === false), '失败尝试也入账');
+  });
+  await checkAsync('只读连接：dropTable 被拒', async () => {
+    const home = tempDir('drop-ro');
+    const dbFile = join(home, 'ro.db');
+    const setup = new DatabaseSync(dbFile);
+    setup.exec('CREATE TABLE t(id INTEGER)');
+    setup.close();
+    const mgr = createConnectionManager(home);
+    mgr.createProfile({ kind: 'sqlite', name: 'ro', database: dbFile, readOnly: true });
+    const pid = mgr.profiles[0].id;
+    await mgr.connect(pid);
+    await assert.rejects(() => mgr.dropTable({ id: pid, database: '', table: 't', confirm: 't' }), /只读|read-only|readOnly/i);
+  });
+}
+
+// ---------------------------------------------------------------------------
 console.log(`\n==== test-v106: ${pass} PASS / ${fail} FAIL ====`);
 for (const dir of tempDirs) { try { rmSync(dir, { recursive: true, force: true }); } catch { /* 平台锁忽略 */ } }
 process.exit(fail > 0 ? 1 : 0);
